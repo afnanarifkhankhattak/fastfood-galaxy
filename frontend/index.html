@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastFood Galaxy | Cosmic Flavors</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="hamburger" onclick="toggleMobileMenu()">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <div class="logo">FastFood <span>Galaxy</span></div>
+        <nav id="nav-menu">
+            <a href="#home" onclick="toggleMobileMenu()">Home</a>
+            <a href="#menu" onclick="toggleMobileMenu()">Menu</a>
+            <a href="#about" onclick="toggleMobileMenu()">About</a>
+            <a href="#contact" onclick="toggleMobileMenu()">Contact</a>
+        </nav>
+        <div class="cart-icon">🛒 <span id="cart-count">0</span></div>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="hero-text">
+            <h1>Savor the <span>Mind-Blowing</span> Taste</h1>
+            <p>Discover 30+ delicious fast food items with cosmic discounts!</p>
+            <a href="#menu" class="cta-btn">Order Now</a>
+        </div>
+    </section>
+
+    <section class="menu-section" id="menu">
+        <h2>Our Cosmic Menu</h2>
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterItems('all')">All Items</button>
+            <button class="filter-btn" onclick="filterItems('burger')">Burgers & Tacos</button>
+            <button class="filter-btn" onclick="filterItems('pizza')">Pizzas</button>
+            <button class="filter-btn" onclick="filterItems('sides')">Sides</button>
+            <button class="filter-btn" onclick="filterItems('drinks')">Drinks</button>
+            <button class="filter-btn" onclick="filterItems('desserts')">Desserts</button>
+        </div>
+        <div class="food-grid" id="food-grid"></div>
+    </section>
+
+    <section class="about-section" id="about">
+        <div class="about-container">
+            <div class="about-image">
+                <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop" alt="About FastFood Galaxy">
+            </div>
+            <div class="about-content">
+                <h2>About <span>Fastfood Galaxy</span></h2>
+                <p>Fastfood galaxy is your go-to destination for mouth-watering fast food made with fresh ingredients and bold flavors. We believe food is not just eating—it’s an experience. That’s why we bring you a wide variety of burgers, pizzas, fries, and desserts, all prepared with love, hygiene, and speed.</p>
+                <p>Whether you're craving a quick snack or a full meal, Fastfood galaxy is here to satisfy your hunger anytime, anywhere.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="galaxy-footer" id="contact">
+        <div class="footer-overlay">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="footer-logo">FastFood <span>Galaxy</span></div>
+                    <p class="tagline">Cosmic flavors, delivered at light speed.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact Us</h4>
+                    <p><i class="fas fa-map-marker-alt footer-icon"></i> I-10 Markaz, Islamabad</p>
+                    <p><i class="fas fa-phone-alt footer-icon"></i> +92 300 1234567</p>
+                    <p><i class="fas fa-envelope footer-icon"></i> support@fastfoodgalaxy.com</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Hours</h4>
+                    <p><i class="far fa-clock footer-icon"></i> Mon - Sun</p>
+                    <p class="highlight">10:00 AM - 12:00 AM</p>
+                </div>
+            </div>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-whatsapp"></i></a>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 Fastfood Galaxy | 6th Semester Project
+            </div>
+        </div>
+    </footer>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="toggleCart()">&times;</span>
+            <h2>Your Cart</h2>
+            <ul id="cart-items"></ul>
+            <p style="margin-top: 20px; font-weight: bold; border-top: 1px solid #444; padding-top: 10px;">Total: $<span id="cart-total">0.00</span></p>
+            <button class="checkout-btn" onclick="showCustomerModal()">Checkout</button>
+        </div>
+    </div>
+
+    <!-- Customer Info Modal -->
+    <div id="customer-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeCustomerModal()">&times;</span>
+            <h2>Complete Your Order</h2>
+            <form id="customer-form">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="customer-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="customer-phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Order Type *</label>
+                    <select id="order-type" required>
+                        <option value="delivery">Delivery</option>
+                        <option value="pickup">Pickup</option>
+                        <option value="dine-in">Dine-in</option>
+                    </select>
+                </div>
+                <div class="form-group" id="address-group" style="display:none;">
+                    <label>Delivery Address *</label>
+                    <textarea id="customer-address" rows="2"></textarea>
+                </div>
+                <div class="form-group" id="table-group" style="display:none;">
+                    <label>Table Number</label>
+                    <input type="text" id="customer-table">
+                </div>
+                <div class="form-group">
+                    <label>Special Instructions (optional)</label>
+                    <textarea id="customer-notes" rows="2"></textarea>
+                </div>
+                <button type="submit" class="checkout-btn">Place Order</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

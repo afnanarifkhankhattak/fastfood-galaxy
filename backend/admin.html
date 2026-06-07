@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - FastFood Galaxy</title>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
+        body { background: #0d0e15; color: white; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .card { background: #161925; border-radius: 16px; padding: 20px; margin-bottom: 30px; }
+        h1, h2 { color: #ff3b00; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #0d0e15; color: white; }
+        button { background: #ff3b00; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-right: 10px; }
+        button:hover { opacity: 0.8; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { background: #0d0e15; color: #ff5100; }
+        .actions button { margin: 0 5px; padding: 5px 10px; font-size: 0.8rem; }
+        .edit-btn { background: #2c7da0; }
+        .delete-btn { background: #a4161a; }
+        .order-item { background: #1e1f2c; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #ff3b00; }
+        .order-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .status-pending { background: #f4a261; color: #000; }
+        .status-completed { background: #2a9d8f; color: white; }
+        .status-cancelled { background: #e76f51; color: white; }
+        pre { background: #0d0e15; padding: 10px; border-radius: 8px; overflow-x: auto; margin-top: 10px; }
+        .login-container { max-width: 400px; margin: 100px auto; }
+        .logout-btn { background: #555; margin-bottom: 20px; }
+        .dashboard { display: none; }
+    </style>
+</head>
+<body>
+<div id="login-container" class="login-container card">
+    <h2>Admin Login</h2>
+    <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="login-username">
+    </div>
+    <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password">
+    </div>
+    <button onclick="login()">Login</button>
+    <p id="login-error" style="color: red; margin-top: 10px;"></p>
+</div>
+
+<div id="dashboard" class="dashboard">
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>🍔 FastFood Galaxy – Admin Panel</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Add/Edit Menu Form -->
+        <div class="card">
+            <h2 id="form-title">Add New Menu Item</h2>
+            <form id="menu-form">
+                <input type="hidden" id="item-id">
+                <div class="form-group"><label>Name</label><input type="text" id="name" required></div>
+                <div class="form-group"><label>Price ($)</label><input type="number" step="0.01" id="price" required></div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="cat" required>
+                        <option value="burger">Burgers & Tacos</option>
+                        <option value="pizza">Pizzas</option>
+                        <option value="sides">Sides</option>
+                        <option value="drinks">Drinks</option>
+                        <option value="desserts">Desserts</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Image URL</label><input type="text" id="img" required></div>
+                <div class="form-group"><label><input type="checkbox" id="discount"> 30% OFF Discount</label></div>
+                <button type="submit">Save Item</button>
+                <button type="button" onclick="resetForm()">Cancel</button>
+            </form>
+        </div>
+
+        <!-- Menu Table -->
+        <div class="card">
+            <h2>Menu Items</h2>
+            <table id="menu-table"><thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Cat</th><th>Discount</th><th>Actions</th></tr></thead><tbody id="menu-body"></tbody></table>
+        </div>
+
+        <!-- Orders Section -->
+        <div class="card orders-section">
+            <h2>Customer Orders</h2>
+            <div id="orders-list">Loading orders...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let authToken = null;
+
+    async function login() {
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+        const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            authToken = data.token;
+            sessionStorage.setItem('adminToken', authToken);
+            showDashboard();
+        } else {
+            document.getElementById('login-error').innerText = data.error || 'Login failed';
+        }
+    }
+
+    function logout() {
+        if (authToken) {
+            fetch('/api/admin/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}` } });
+        }
+        sessionStorage.removeItem('adminToken');
+        authToken = null;
+        document.getElementById('login-container').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+    }
+
+    function showDashboard() {
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadMenu();
+        loadOrders();
+    }
+
+    function getHeaders() {
+        return { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' };
+    }
+
+    async function loadMenu() {
+        const res = await fetch('/api/menu');
+        const items = await res.json();
+        const tbody = document.getElementById('menu-body');
+        tbody.innerHTML = items.map(item => `
+            <tr>
+                <td>${item._id}</td><td>${item.name}</td><td>$${item.price}</td><td>${item.cat}</td>
+                <td>${item.discount ? '30% OFF' : 'No'}</td>
+                <td class="actions"><button class="edit-btn" onclick="editItem('${item._id}')">Edit</button><button class="delete-btn" onclick="deleteItem('${item._id}')">Delete</button></td>
+            </tr>
+        `).join('');
+    }
+
+    async function editItem(id) {
+        const res = await fetch('/api/menu');
+        const items = await res.json();
+        const item = items.find(i => i._id === id);
+        if (item) {
+            document.getElementById('item-id').value = item._id;
+            document.getElementById('name').value = item.name;
+            document.getElementById('price').value = item.price;
+            document.getElementById('cat').value = item.cat;
+            document.getElementById('img').value = item.img;
+            document.getElementById('discount').checked = item.discount === 1;
+            document.getElementById('form-title').innerText = 'Edit Menu Item';
+        }
+    }
+
+    async function deleteItem(id) {
+        if (!confirm('Delete this item?')) return;
+        const res = await fetch(`/api/admin/menu/${id}`, { method: 'DELETE', headers: getHeaders() });
+        if (res.ok) { alert('Deleted'); loadMenu(); }
+        else alert('Error');
+    }
+
+    document.getElementById('menu-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('item-id').value;
+        const item = {
+            name: document.getElementById('name').value,
+            price: parseFloat(document.getElementById('price').value),
+            cat: document.getElementById('cat').value,
+            img: document.getElementById('img').value,
+            discount: document.getElementById('discount').checked ? 1 : 0
+        };
+        let url = '/api/admin/menu';
+        let method = 'POST';
+        if (id) { url = `/api/admin/menu/${id}`; method = 'PUT'; }
+        const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(item) });
+        if (res.ok) { alert(id ? 'Updated' : 'Added'); resetForm(); loadMenu(); }
+        else alert('Error');
+    });
+
+    function resetForm() {
+        document.getElementById('menu-form').reset();
+        document.getElementById('item-id').value = '';
+        document.getElementById('form-title').innerText = 'Add New Menu Item';
+    }
+
+    async function loadOrders() {
+        const res = await fetch('/api/admin/orders', { headers: getHeaders() });
+        const orders = await res.json();
+        const container = document.getElementById('orders-list');
+        if (orders.length === 0) { container.innerHTML = '<p>No orders yet.</p>'; return; }
+        container.innerHTML = orders.map(order => `
+            <div class="order-item">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>Order #${order._id}</strong><br>
+                        <strong>${order.customer.name}</strong> (${order.customer.phone})<br>
+                        Type: ${order.customer.orderType}<br>
+                        ${order.customer.address ? `Address: ${order.customer.address}<br>` : ''}
+                        ${order.customer.tableNumber ? `Table: ${order.customer.tableNumber}<br>` : ''}
+                        ${order.customer.notes ? `Notes: ${order.customer.notes}<br>` : ''}
+                        Total: $${order.total} | ${new Date(order.createdAt).toLocaleString()}
+                    </div>
+                    <div>
+                        <span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>
+                        <button onclick="updateOrderStatus('${order._id}', 'pending')" style="background:#f4a261;">Pending</button>
+                        <button onclick="updateOrderStatus('${order._id}', 'completed')" style="background:#2a9d8f;">Completed</button>
+                        <button onclick="updateOrderStatus('${order._id}', 'cancelled')" style="background:#e76f51;">Cancel</button>
+                    </div>
+                </div>
+                <pre>${JSON.stringify(order.items, null, 2)}</pre>
+            </div>
+        `).join('');
+    }
+
+    async function updateOrderStatus(orderId, status) {
+        const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: getHeaders(),
+            body: JSON.stringify({ status })
+        });
+        if (res.ok) { loadOrders(); }
+        else alert('Error updating status');
+    }
+
+    // Auto-refresh orders every 15 seconds
+    let refreshInterval = null;
+    if (sessionStorage.getItem('adminToken')) {
+        authToken = sessionStorage.getItem('adminToken');
+        showDashboard();
+        refreshInterval = setInterval(() => { if (authToken) loadOrders(); }, 15000);
+    }
+</script>
+</body>
+</html>
