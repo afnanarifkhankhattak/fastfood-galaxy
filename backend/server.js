@@ -42,7 +42,26 @@ const menuItemSchema = new mongoose.Schema({
 });
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
 
+// Counter collection for auto-incrementing order numbers
+const counterSchema = new mongoose.Schema({
+    _id: { type: String, required: true },
+    seq: { type: Number, default: 0 }
+});
+const Counter = mongoose.model('Counter', counterSchema);
+
+// Helper to get next sequential order number
+async function getNextOrderNumber() {
+    const counter = await Counter.findByIdAndUpdate(
+        { _id: 'orderNumber' },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    );
+    return counter.seq;
+}
+
+// UPDATED orderSchema with orderNumber and full status list
 const orderSchema = new mongoose.Schema({
+    orderNumber: { type: Number, unique: true },   // simple sequential number
     items: { type: Array, required: true },
     total: { type: Number, required: true },
     customer: {
@@ -53,9 +72,13 @@ const orderSchema = new mongoose.Schema({
         tableNumber: { type: String, default: '' },
         notes: { type: String, default: '' }
     },
-    createdAt: { type: Date, default: Date.now },
-    status: { type: String, default: 'pending', enum: ['pending', 'completed', 'cancelled'] }
-});
+    status: {
+        type: String,
+        default: 'pending',
+        enum: ['pending', 'preparing', 'ready', 'completed', 'cancelled']
+    }
+}, { timestamps: true });
+
 const Order = mongoose.model('Order', orderSchema);
 
 // -------------------- Admin Auth (environment variables) --------------------
@@ -98,13 +121,40 @@ app.post('/api/orders', async (req, res) => {
     }
     
     try {
-        const newOrder = new Order({ items, total, customer });
+        const orderNumber = await getNextOrderNumber();
+        const newOrder = new Order({ orderNumber, items, total, customer });
         console.log('🔄 Attempting to save order...');
         await newOrder.save();
-        console.log('✅ Order saved with ID:', newOrder._id);
-        res.status(201).json({ message: 'Order saved', orderId: newOrder._id });
+        console.log(`✅ Order #${orderNumber} saved with ID:`, newOrder._id);
+        res.status(201).json({ message: 'Order saved', orderNumber: orderNumber, orderId: newOrder._id });
     } catch (err) {
         console.error('❌ Error saving order:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Public order status endpoint (accepts orderNumber or _id)
+app.get('/api/order-status/:id', async (req, res) => {
+    try {
+        let order;
+        const idParam = req.params.id;
+        if (/^\d+$/.test(idParam)) {
+            order = await Order.findOne({ orderNumber: parseInt(idParam) });
+        } else {
+            order = await Order.findById(idParam);
+        }
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        res.json({
+            _id: order._id,
+            orderNumber: order.orderNumber,
+            customer: { name: order.customer.name },
+            total: order.total,
+            status: order.status,
+            updatedAt: order.updatedAt
+        });
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
@@ -139,7 +189,7 @@ app.get('/api/admin/orders', requireAdminAuth, async (req, res) => {
 
 app.patch('/api/admin/orders/:id/status', requireAdminAuth, async (req, res) => {
     const { status } = req.body;
-    const allowed = ['pending', 'completed', 'cancelled'];
+    const allowed = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
     if (!allowed.includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });
     }

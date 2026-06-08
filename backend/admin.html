@@ -24,6 +24,8 @@
         .order-item { background: #1e1f2c; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #ff3b00; }
         .order-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
         .status-pending { background: #f4a261; color: #000; }
+        .status-preparing { background: #2a9d8f; color: white; }
+        .status-ready { background: #e9c46a; color: #000; }
         .status-completed { background: #2a9d8f; color: white; }
         .status-cancelled { background: #e76f51; color: white; }
         pre { background: #0d0e15; padding: 10px; border-radius: 8px; overflow-x: auto; margin-top: 10px; }
@@ -212,9 +214,11 @@
                     </div>
                     <div>
                         <span class="order-status status-${order.status}">${order.status.toUpperCase()}</span>
-                        <button onclick="updateOrderStatus('${order._id}', 'pending')" style="background:#f4a261;">Pending</button>
-                        <button onclick="updateOrderStatus('${order._id}', 'completed')" style="background:#2a9d8f;">Completed</button>
-                        <button onclick="updateOrderStatus('${order._id}', 'cancelled')" style="background:#e76f51;">Cancel</button>
+                        <button onclick="updateOrderStatus('${order._id}', 'pending')">Pending</button>
+                        <button onclick="updateOrderStatus('${order._id}', 'preparing')">Preparing</button>
+                        <button onclick="updateOrderStatus('${order._id}', 'ready')">Ready</button>
+                        <button onclick="updateOrderStatus('${order._id}', 'completed')">Completed</button>
+                        <button onclick="updateOrderStatus('${order._id}', 'cancelled')">Cancel</button>
                     </div>
                 </div>
                 <pre>${JSON.stringify(order.items, null, 2)}</pre>

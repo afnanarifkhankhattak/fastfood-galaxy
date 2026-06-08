@@ -120,7 +120,7 @@ function showCustomerModal() {
 function closeCustomerModal() {
     document.getElementById('customer-modal').style.display = 'none';
     document.getElementById('customer-form').reset();
-    toggleOrderFields(); // reset visibility
+    toggleOrderFields();
 }
 
 function toggleOrderFields() {
@@ -135,13 +135,38 @@ function toggleOrderFields() {
         addressGroup.style.display = 'none';
         tableGroup.style.display = 'block';
         document.getElementById('customer-address').required = false;
-    } else { // pickup
+    } else {
         addressGroup.style.display = 'none';
         tableGroup.style.display = 'none';
         document.getElementById('customer-address').required = false;
     }
 }
 
+// ---------- Order ID Modal (shows simple order number) ----------
+function showOrderIdModal(orderNumber) {
+    const trackingUrl = `${window.location.origin}/track-order.html`;
+    const modalHtml = `
+        <div id="order-id-modal" class="modal" style="display:block; z-index:3000;">
+            <div class="modal-content" style="text-align:center; max-width:400px;">
+                <span class="close-btn" onclick="closeOrderIdModal()">&times;</span>
+                <h2>🎉 Order Placed!</h2>
+                <p>Your <strong>Order Number</strong> is:</p>
+                <p style="font-size:2rem; font-weight:bold; background:#0d0e15; padding:10px; border-radius:10px;">#${orderNumber}</p>
+                <p>Use this number to track your order:</p>
+                <a href="${trackingUrl}" target="_blank" style="display:inline-block; background:#ff3b00; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; margin-top:10px;">Track Order</a>
+                <button onclick="closeOrderIdModal()" style="display:block; width:100%; margin-top:15px;">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closeOrderIdModal() {
+    const modal = document.getElementById('order-id-modal');
+    if (modal) modal.remove();
+}
+
+// ---------- Submit Order (now uses simple order number) ----------
 async function submitOrderWithDetails(event) {
     event.preventDefault();
     
@@ -184,7 +209,11 @@ async function submitOrderWithDetails(event) {
         });
         
         if (response.ok) {
+            const result = await response.json();
+            const orderNumber = result.orderNumber;   // simple sequential number
             showToast('✅ Order placed successfully!');
+            showOrderIdModal(orderNumber);   // show simple order number
+            
             // Reset cart
             cart = [];
             total = 0;
@@ -193,7 +222,7 @@ async function submitOrderWithDetails(event) {
             updateCartUI();
             document.getElementById('cart-count').innerText = '0';
             closeCustomerModal();
-            toggleCart(); // close cart modal if open
+            toggleCart();
         } else {
             const err = await response.json();
             showToast(`❌ ${err.error || 'Failed to place order'}`);
@@ -212,6 +241,7 @@ function showToast(msg) {
     setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 2500);
 }
 
+// ---------- Mobile Menu ----------
 function toggleMobileMenu() {
     const nav = document.getElementById('nav-menu');
     if (window.innerWidth <= 768) {
@@ -223,8 +253,10 @@ function toggleMobileMenu() {
 window.onclick = function(event) {
     const cartModal = document.getElementById('cart-modal');
     const customerModal = document.getElementById('customer-modal');
+    const orderIdModal = document.getElementById('order-id-modal');
     if (event.target === cartModal) cartModal.style.display = 'none';
     if (event.target === customerModal) customerModal.style.display = 'none';
+    if (event.target === orderIdModal) closeOrderIdModal();
 };
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Order - FastFood Galaxy</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .track-container {
+            max-width: 600px;
+            margin: 120px auto;
+            background: #161925;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .track-container h2 {
+            color: #ff3b00;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #0d0e15;
+            color: white;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #ff3b00;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .status-card {
+            margin-top: 30px;
+            padding: 20px;
+            background: #0d0e15;
+            border-radius: 16px;
+            text-align: left;
+            border-left: 4px solid #ff3b00;
+        }
+        .status-card p {
+            margin: 10px 0;
+            color: #ddd;
+        }
+        .status-card strong {
+            color: white;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-pending { background: #f4a261; color: #000; }
+        .status-preparing { background: #2a9d8f; color: white; }
+        .status-ready { background: #e9c46a; color: #000; }
+        .status-completed { background: #2a9d8f; color: white; }
+        .status-cancelled { background: #e76f51; color: white; }
+        .error {
+            color: #e76f51;
+            margin-top: 15px;
+        }
+        .loader {
+            margin-top: 20px;
+            color: #ff3b00;
+        }
+    </style>
+</head>
+<body>
+    <!-- Simple header for tracking page -->
+    <header>
+        <div class="logo">FastFood <span>Galaxy</span></div>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/menu">Menu</a>
+        </nav>
+    </header>
+
+    <div class="track-container">
+        <h2>🔍 Track Your Order</h2>
+        <input type="text" id="orderIdInput" placeholder="Enter your Order Number (e.g., 1, 2, 3...)">
+        <button onclick="trackOrder()">Track Order</button>
+        <div id="statusResult"></div>
+    </div>
+
+    <script>
+        async function trackOrder() {
+            const orderId = document.getElementById('orderIdInput').value.trim();
+            const resultDiv = document.getElementById('statusResult');
+            if (!orderId) {
+                resultDiv.innerHTML = '<p class="error">Please enter an Order Number.</p>';
+                return;
+            }
+            resultDiv.innerHTML = '<div class="loader">Loading order status...</div>';
+            
+            try {
+                const response = await fetch(`/api/order-status/${orderId}`);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        resultDiv.innerHTML = '<p class="error">Order not found. Please check your Order Number.</p>';
+                    } else {
+                        resultDiv.innerHTML = '<p class="error">Error fetching order status. Please try again later.</p>';
+                    }
+                    return;
+                }
+                const order = await response.json();
+                
+                let statusText = '';
+                let statusClass = '';
+                
+                // Custom messages for each status
+                switch(order.status) {
+                    case 'pending':
+                        statusText = '⏳ Pending - Waiting for restaurant confirmation';
+                        statusClass = 'pending';
+                        break;
+                    case 'preparing':
+                        statusText = '🍳 Preparing - Your order is being cooked!';
+                        statusClass = 'preparing';
+                        break;
+                    case 'ready':
+                        statusText = '🍽️ Your order is ready and will be served in one minute!';
+                        statusClass = 'ready';
+                        break;
+                    case 'completed':
+                        statusText = ' Order completed! Thank you for dining with us.';
+                        statusClass = 'completed';
+                        break;
+                    case 'cancelled':
+                        statusText = '❌ Cancelled - Please contact support.';
+                        statusClass = 'cancelled';
+                        break;
+                    default:
+                        statusText = order.status;
+                        statusClass = 'pending';
+                }
+                
+                const updatedDate = new Date(order.updatedAt).toLocaleString();
+                resultDiv.innerHTML = `
+                    <div class="status-card">
+                        <p><strong>Order ID:</strong> ${order._id}</p>
+                        <p><strong>Order Number:</strong> #${order.orderNumber}</p>
+                        <p><strong>Customer:</strong> ${order.customer.name}</p>
+                        <p><strong>Total Amount:</strong> $${order.total}</p>
+                        <p><strong>Current Status:</strong> 
+                            <span class="status-badge status-${statusClass}">${statusText}</span>
+                        </p>
+                        <p><strong>Last Updated:</strong> ${updatedDate}</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Tracking error:', error);
+                resultDiv.innerHTML = '<p class="error">Network error. Please try again.</p>';
+            }
+        }
+        
+        // Allow pressing Enter key in the input field
+        document.getElementById('orderIdInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                trackOrder();
+            }
+        });
+    </script>
+</body>
+</html>
