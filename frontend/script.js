@@ -4,7 +4,6 @@ let menuItems = [];
 let currentOrderTotal = 0;
 let currentCartItems = [];
 
-// Fetch menu from backend
 async function loadMenu() {
     try {
         const res = await fetch('/api/menu');
@@ -21,18 +20,11 @@ function renderMenu(items) {
     grid.innerHTML = items.map(item => {
         const finalPrice = item.discount ? (item.price * 0.7).toFixed(2) : item.price.toFixed(2);
         let priceHTML = item.discount ? `<del>$${item.price.toFixed(2)}</del> $${finalPrice}` : `$${item.price.toFixed(2)}`;
-        
         let description = "Cosmic flavors from the galaxy.";
-        if (item.cat === "burger" || item.cat === "pizza") {
-            description = "Experience the cosmic heat of bold spices and flame-grilled flavors.";
-        } else if (item.cat === "desserts") {
-            description = "Indulge in a stellar explosion of sweetness and rich, velvety textures.";
-        } else if (item.cat === "drinks") {
-            description = "Refresh your senses with a frosty, sub-zero blast of celestial flavors.";
-        } else if (item.cat === "sides") {
-            description = "The perfect gravitational pull for your meal—crispy, fresh, and savory.";
-        }
-
+        if (item.cat === "burger" || item.cat === "pizza") description = "Experience the cosmic heat of bold spices and flame-grilled flavors.";
+        else if (item.cat === "desserts") description = "Indulge in a stellar explosion of sweetness and rich, velvety textures.";
+        else if (item.cat === "drinks") description = "Refresh your senses with a frosty, sub-zero blast of celestial flavors.";
+        else if (item.cat === "sides") description = "The perfect gravitational pull for your meal—crispy, fresh, and savory.";
         return `
             <div class="food-card" data-category="${item.cat}">
                 ${item.discount ? '<div class="badge">30% OFF</div>' : ''}
@@ -46,8 +38,6 @@ function renderMenu(items) {
             </div>
         `;
     }).join('');
-
-    // Scroll animations
     document.querySelectorAll('.food-card').forEach(card => {
         card.style.opacity = "0";
         card.style.transform = "translateY(50px)";
@@ -77,12 +67,7 @@ function addToCart(name, price) {
 
 function updateCartUI() {
     const list = document.getElementById('cart-items');
-    list.innerHTML = cart.map(item => `
-        <li>
-            <span>${item.name}</span>
-            <span>$${item.price.toFixed(2)}</span>
-        </li>
-    `).join('');
+    list.innerHTML = cart.map(item => `<li><span>${item.name}</span><span>$${item.price.toFixed(2)}</span></li>`).join('');
     document.getElementById('cart-total').innerText = total.toFixed(2);
 }
 
@@ -95,23 +80,14 @@ function filterItems(cat) {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-    
     const cards = document.querySelectorAll('.food-card');
     cards.forEach(card => {
-        if (cat === 'all' || card.dataset.category === cat) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
+        card.style.display = (cat === 'all' || card.dataset.category === cat) ? 'flex' : 'none';
     });
 }
 
-// ---------- Customer Info Modal Functions ----------
 function showCustomerModal() {
-    if (cart.length === 0) {
-        showToast('Your cart is empty!');
-        return;
-    }
+    if (cart.length === 0) { showToast('Your cart is empty!'); return; }
     currentCartItems = [...cart];
     currentOrderTotal = total;
     document.getElementById('customer-modal').style.display = 'block';
@@ -142,7 +118,6 @@ function toggleOrderFields() {
     }
 }
 
-// ---------- Order ID Modal (shows simple order number) ----------
 function showOrderIdModal(orderNumber) {
     const trackingUrl = `${window.location.origin}/track-order.html`;
     const modalHtml = `
@@ -166,28 +141,19 @@ function closeOrderIdModal() {
     if (modal) modal.remove();
 }
 
-// ---------- Submit Order (now uses simple order number) ----------
 async function submitOrderWithDetails(event) {
     event.preventDefault();
-    
     const customerName = document.getElementById('customer-name').value.trim();
     const customerPhone = document.getElementById('customer-phone').value.trim();
     const orderType = document.getElementById('order-type').value;
-    let address = '';
-    let tableNumber = '';
-    
+    let address = '', tableNumber = '';
     if (orderType === 'delivery') {
         address = document.getElementById('customer-address').value.trim();
-        if (!address) {
-            showToast('Please enter delivery address');
-            return;
-        }
+        if (!address) { showToast('Please enter delivery address'); return; }
     } else if (orderType === 'dine-in') {
         tableNumber = document.getElementById('customer-table').value.trim();
     }
-    
     const notes = document.getElementById('customer-notes').value.trim();
-    
     const orderData = {
         items: currentCartItems,
         total: currentOrderTotal,
@@ -200,21 +166,17 @@ async function submitOrderWithDetails(event) {
             notes: notes
         }
     };
-    
     try {
         const response = await fetch('/api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderData)
         });
-        
         if (response.ok) {
             const result = await response.json();
-            const orderNumber = result.orderNumber;   // simple sequential number
+            const orderNumber = result.orderNumber;
             showToast('✅ Order placed successfully!');
-            showOrderIdModal(orderNumber);   // show simple order number
-            
-            // Reset cart
+            showOrderIdModal(orderNumber);
             cart = [];
             total = 0;
             currentCartItems = [];
@@ -241,7 +203,6 @@ function showToast(msg) {
     setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 2500);
 }
 
-// ---------- Mobile Menu ----------
 function toggleMobileMenu() {
     const nav = document.getElementById('nav-menu');
     if (window.innerWidth <= 768) {
@@ -249,7 +210,6 @@ function toggleMobileMenu() {
     }
 }
 
-// Close modals when clicking outside
 window.onclick = function(event) {
     const cartModal = document.getElementById('cart-modal');
     const customerModal = document.getElementById('customer-modal');
