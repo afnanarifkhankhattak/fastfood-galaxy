@@ -89,10 +89,7 @@ nav a:hover {
     cursor: pointer;
     z-index: 1100;
 }
-.hamburger {
-    margin-right: auto;  /* pushes it to the far left */
-    margin-left: 10px;   /* fine-tune from left edge */
-}
+
 .bar {
     width: 25px;
     height: 3px;
