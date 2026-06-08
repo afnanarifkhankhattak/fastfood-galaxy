@@ -203,24 +203,70 @@ function showToast(msg) {
     setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 2500);
 }
 
+// ========== MOBILE MENU – SIMPLEST POSSIBLE ==========
 function toggleMobileMenu() {
     const nav = document.getElementById('nav-menu');
     const overlay = document.querySelector('.menu-overlay');
     if (nav) nav.classList.toggle('active');
     if (overlay) overlay.classList.toggle('active');
+    // For debugging: log when toggled
+    console.log('Menu toggled, nav active:', nav.classList.contains('active'));
 }
+
+function closeMobileMenu() {
+    const nav = document.getElementById('nav-menu');
+    const overlay = document.querySelector('.menu-overlay');
+    if (nav && nav.classList.contains('active')) {
+        nav.classList.remove('active');
+        overlay.classList.remove('active');
+        console.log('Menu closed');
+    }
+}
+
+function scrollToSection(sectionId) {
+    const target = document.querySelector(sectionId);
+    if (target) {
+        const offset = 80;
+        const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+    }
+}
+
+// ========== CLOSE MODALS ON OUTSIDE CLICK ==========
 window.onclick = function(event) {
     const cartModal = document.getElementById('cart-modal');
     const customerModal = document.getElementById('customer-modal');
     const orderIdModal = document.getElementById('order-id-modal');
-    if (event.target === cartModal) cartModal.style.display = 'none';
-    if (event.target === customerModal) customerModal.style.display = 'none';
+    if (event.target === cartModal) toggleCart();
+    if (event.target === customerModal) closeCustomerModal();
     if (event.target === orderIdModal) closeOrderIdModal();
 };
 
+// ========== INITIALIZE – NO OVERLAY CLOSE HANDLER ==========
 document.addEventListener('DOMContentLoaded', () => {
     loadMenu();
     document.querySelector('.cart-icon').addEventListener('click', toggleCart);
     document.getElementById('order-type').addEventListener('change', toggleOrderFields);
     document.getElementById('customer-form').addEventListener('submit', submitOrderWithDetails);
+    
+    const hamburger = document.getElementById('hamburger');
+    if (hamburger) {
+        hamburger.addEventListener('click', function(e) {
+            e.stopPropagation(); // prevent any parent from receiving the click
+            toggleMobileMenu();
+        });
+    }
+    
+    // Do NOT add any click handler on .menu-overlay here – it will be handled by links only
+    
+    const navLinks = document.querySelectorAll('#nav-menu a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const href = link.getAttribute('href');
+            scrollToSection(href);
+            closeMobileMenu();
+        });
+    });
 });

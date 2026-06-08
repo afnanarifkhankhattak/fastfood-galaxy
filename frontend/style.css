@@ -66,6 +66,7 @@ nav a:hover {
     font-size: 1.5rem;
     cursor: pointer;
     position: relative;
+    margin-right: 10px;  /* adds space from the right edge */
 }
 .cart-icon:hover {
     transform: scale(1.1);
@@ -464,12 +465,19 @@ nav a:hover {
 }
 
 /* ===== MOBILE MENU (FIXED) ===== */
+/* ===== MOBILE MENU (from test.html – works) ===== */
 @media (max-width: 768px) {
-    .hero h1 {
-        font-size: 2.8rem;
-    }
     .hamburger {
-        display: flex;
+        display: block;
+        cursor: pointer;
+        z-index: 1100;
+    }
+    .bar {
+        width: 25px;
+        height: 3px;
+        background: white;
+        margin: 4px 0;
+        border-radius: 3px;
     }
     nav {
         position: fixed;
@@ -479,10 +487,9 @@ nav a:hover {
         height: 100vh;
         background: #161925;
         flex-direction: column;
-        padding: 80px 20px 20px;
-        transition: left 0.3s ease;
+        padding: 80px 20px;
+        transition: left 0.3s;
         z-index: 1001;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
     }
     nav.active {
         left: 0;
@@ -495,7 +502,6 @@ nav a:hover {
         font-size: 1.2rem;
     }
     .menu-overlay {
-        display: none;
         position: fixed;
         top: 0;
         left: 0;
@@ -503,13 +509,33 @@ nav a:hover {
         height: 100%;
         background: rgba(0,0,0,0.7);
         z-index: 1000;
+        display: none;
     }
     .menu-overlay.active {
         display: block;
     }
 }
+    .menu-overlay.active {
+        display: block;
+    }
+
 
 /* FIX FOR ANCHOR LINKS WITH FIXED HEADER */
 section[id] {
     scroll-margin-top: 80px;
+}
+/* Force hamburger to be clickable on phones */
+@media (max-width: 768px) {
+    .hamburger {
+        display: block !important;
+        cursor: pointer;
+        z-index: 9999;
+    }
+    .menu-overlay {
+        z-index: 9998;
+    }
+}
+.hamburger {
+    cursor: pointer;
+    touch-action: manipulation;  /* improves touch response */
 }
