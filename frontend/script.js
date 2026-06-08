@@ -1,10 +1,11 @@
+// -------------------- CART & ORDER STATE --------------------
 let cart = [];
 let total = 0;
 let menuItems = [];
 let currentOrderTotal = 0;
 let currentCartItems = [];
 
-// Fetch menu from backend
+// -------------------- LOAD MENU FROM BACKEND --------------------
 async function loadMenu() {
     try {
         const res = await fetch('/api/menu');
@@ -16,6 +17,7 @@ async function loadMenu() {
     }
 }
 
+// -------------------- RENDER MENU (with images, discounts, filters) --------------------
 function renderMenu(items) {
     const grid = document.getElementById('food-grid');
     grid.innerHTML = items.map(item => {
@@ -47,7 +49,7 @@ function renderMenu(items) {
         `;
     }).join('');
 
-    // Scroll animations
+    // Scroll animations for menu cards
     document.querySelectorAll('.food-card').forEach(card => {
         card.style.opacity = "0";
         card.style.transform = "translateY(50px)";
@@ -56,6 +58,7 @@ function renderMenu(items) {
     });
 }
 
+// Intersection Observer for card animations
 const observerOptions = { threshold: 0.1 };
 const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -67,6 +70,7 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
+// -------------------- CART FUNCTIONS --------------------
 function addToCart(name, price) {
     cart.push({ name, price: parseFloat(price) });
     total += parseFloat(price);
@@ -91,6 +95,7 @@ function toggleCart() {
     modal.style.display = (modal.style.display === 'block') ? 'none' : 'block';
 }
 
+// Filter menu items
 function filterItems(cat) {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
@@ -106,7 +111,7 @@ function filterItems(cat) {
     });
 }
 
-// ---------- Customer Info Modal Functions ----------
+// -------------------- CUSTOMER INFO MODAL --------------------
 function showCustomerModal() {
     if (cart.length === 0) {
         showToast('Your cart is empty!');
@@ -120,7 +125,7 @@ function showCustomerModal() {
 function closeCustomerModal() {
     document.getElementById('customer-modal').style.display = 'none';
     document.getElementById('customer-form').reset();
-    toggleOrderFields(); // reset visibility
+    toggleOrderFields();
 }
 
 function toggleOrderFields() {
@@ -135,7 +140,7 @@ function toggleOrderFields() {
         addressGroup.style.display = 'none';
         tableGroup.style.display = 'block';
         document.getElementById('customer-address').required = false;
-    } else { // pickup
+    } else {
         addressGroup.style.display = 'none';
         tableGroup.style.display = 'none';
         document.getElementById('customer-address').required = false;
@@ -185,7 +190,6 @@ async function submitOrderWithDetails(event) {
         
         if (response.ok) {
             showToast('✅ Order placed successfully!');
-            // Reset cart
             cart = [];
             total = 0;
             currentCartItems = [];
@@ -193,7 +197,7 @@ async function submitOrderWithDetails(event) {
             updateCartUI();
             document.getElementById('cart-count').innerText = '0';
             closeCustomerModal();
-            toggleCart(); // close cart modal if open
+            toggleCart();
         } else {
             const err = await response.json();
             showToast(`❌ ${err.error || 'Failed to place order'}`);
@@ -212,24 +216,71 @@ function showToast(msg) {
     setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 2500);
 }
 
+// -------------------- MOBILE MENU (GUARANTEED WORKING) --------------------
 function toggleMobileMenu() {
     const nav = document.getElementById('nav-menu');
-    if (window.innerWidth <= 768) {
-        nav.classList.toggle('active');
+    const overlay = document.querySelector('.menu-overlay');
+    if (nav) nav.classList.toggle('active');
+    if (overlay) overlay.classList.toggle('active');
+}
+
+function closeMobileMenu() {
+    const nav = document.getElementById('nav-menu');
+    const overlay = document.querySelector('.menu-overlay');
+    if (nav) nav.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function scrollToSection(sectionId) {
+    const target = document.querySelector(sectionId);
+    if (target) {
+        const offset = 80;
+        const elementPosition = target.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - offset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
 }
+
+// -------------------- INITIALIZATION --------------------
+document.addEventListener('DOMContentLoaded', () => {
+    // Load menu
+    loadMenu();
+    
+    // Cart and form listeners
+    document.querySelector('.cart-icon').addEventListener('click', toggleCart);
+    document.getElementById('order-type').addEventListener('change', toggleOrderFields);
+    document.getElementById('customer-form').addEventListener('submit', submitOrderWithDetails);
+    
+    // Mobile menu: hamburger click
+    const hamburger = document.getElementById('hamburger');
+    if (hamburger) {
+        hamburger.addEventListener('click', toggleMobileMenu);
+    } else {
+        console.error('Hamburger element not found! Check id="hamburger"');
+    }
+    
+    // Overlay click closes menu
+    const overlay = document.querySelector('.menu-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', closeMobileMenu);
+    }
+    
+    // Navigation links: smooth scroll + close menu
+    const navLinks = document.querySelectorAll('#nav-menu a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.getAttribute('href');
+            scrollToSection(href);
+            closeMobileMenu();
+        });
+    });
+});
 
 // Close modals when clicking outside
 window.onclick = function(event) {
     const cartModal = document.getElementById('cart-modal');
     const customerModal = document.getElementById('customer-modal');
-    if (event.target === cartModal) cartModal.style.display = 'none';
-    if (event.target === customerModal) customerModal.style.display = 'none';
+    if (event.target === cartModal) toggleCart();
+    if (event.target === customerModal) closeCustomerModal();
 };
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadMenu();
-    document.querySelector('.cart-icon').addEventListener('click', toggleCart);
-    document.getElementById('order-type').addEventListener('change', toggleOrderFields);
-    document.getElementById('customer-form').addEventListener('submit', submitOrderWithDetails);
-});
