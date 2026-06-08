@@ -205,11 +205,10 @@ function showToast(msg) {
 
 function toggleMobileMenu() {
     const nav = document.getElementById('nav-menu');
-    if (window.innerWidth <= 768) {
-        nav.classList.toggle('active');
-    }
+    const overlay = document.querySelector('.menu-overlay');
+    if (nav) nav.classList.toggle('active');
+    if (overlay) overlay.classList.toggle('active');
 }
-
 window.onclick = function(event) {
     const cartModal = document.getElementById('cart-modal');
     const customerModal = document.getElementById('customer-modal');
